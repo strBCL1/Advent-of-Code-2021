@@ -54,30 +54,51 @@ class Solution {
             int finishY = finishCoords.get(currentCoordsIndex).getValue();
 
 
-            if (currentX == finishX) {  //startX == finishX
-                for (currentY = Math.min(currentY, finishY); currentY < Math.max(currentY, finishY); currentY += (currentY > finishY) ? -1 : 1) {
+            if (currentX == finishX) {  //startX == finishX - same column
+                int temp = finishY;
+                finishY = Math.max(currentY, finishY);
+                currentY = Math.min(currentY, temp);
+                for (; currentY <= finishY;  currentY += (currentY > finishY) ? -1 : 1) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
 
-            else if (currentY == finishY) {
-                for (currentX = Math.min(currentX, finishX); currentX < Math.max(currentX, finishX); currentX += (currentX > finishX) ? -1 : 1) {
+            else if (currentY == finishY) {//same row
+                int temp = finishX;
+                finishX =  Math.max(currentX, finishX);
+                currentX = Math.min(currentX, temp);
+                for (; currentX <= finishX; currentX += (currentX > finishX) ? -1 : 1) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
         }
 
-        printGrid(grid);
+        // printGrid(grid);
+        countCells(grid);
     }
 
 
     private void printGrid(char[][] grid) {
-        for (int r = 0; r < maxY; ++r) {
-            for (int c = 0; c < maxX; ++c) {
+        for (int r = 0; r < grid.length; ++r) {
+            for (int c = 0; c < grid[0].length; ++c) {
                 System.out.print(grid[r][c] + " ");
             }
             System.out.println();
         }
+    }
+
+
+    private void countCells(char[][] grid) {
+        int counter = 0;
+        for (int i = 0; i < grid.length; ++i) {
+            for (int j = 0; j < grid[0].length; ++j) {
+                if ((char)grid[i][j] >= '2') {
+                    counter++;
+                }
+            }
+        }
+
+        System.out.println(counter);
     }
 }
 
