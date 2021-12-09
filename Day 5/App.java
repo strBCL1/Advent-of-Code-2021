@@ -24,7 +24,7 @@ class Solution {
      * @throws IOException may be caused by BufferedReader.readLine() method if an I/O error occurs
      */
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("path/to/input file"));
+        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 5/input.txt")); //"path/to/input file"
         String currentLine = "";
 
         while ((currentLine = bf.readLine()) != null) {
@@ -73,22 +73,22 @@ class Solution {
             int finishY = finishCoords.get(currentCoordsIndex).getValue();
 
 
-            if (currentX == finishX) {  //same column
+            if (currentX == finishX || currentY == finishY) {  //same column
                 int temp = finishY;
                 finishY = Math.max(currentY, finishY);
                 currentY = Math.min(currentY, temp);
-
-                for (; currentY <= finishY;  currentY += (currentY > finishY) ? -1 : 1) {
-                    grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
-                }
-            }
-
-            else if (currentY == finishY) { //same row
-                int temp = finishX;
+                
+                temp = finishX;
                 finishX = Math.max(currentX, finishX);
                 currentX = Math.min(currentX, temp);
 
-                for (; currentX <= finishX; currentX += (currentX > finishX) ? -1 : 1) {
+                int amountOfMoves = Math.max(Math.abs(finishX - currentX), Math.abs(finishY - currentY));
+
+                for (; amountOfMoves >= 0 && 
+                    (currentX == finishX ? (currentY <= finishY) : (currentX <= finishX));
+                    currentY += ((currentY > finishY) ? -1 : (currentY == finishY) ? 0 : 1), 
+                    currentX += ((currentX > finishX) ? -1 : (currentX == finishX) ? 0 : 1), 
+                    --amountOfMoves) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
