@@ -7,28 +7,43 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class Solution {
-    private LinkedList<Entry<Integer, Integer>> startCoords = new LinkedList<>();
-    private LinkedList<Entry<Integer, Integer>> finishCoords = new LinkedList<>();
-    int maxX = 0, maxY = 0;
 
+class Solution {
+    //Store pairs of starting coordinates
+    private LinkedList<Entry<Integer, Integer>> startCoords = new LinkedList<>();
+
+    //Store pairs of finishing coordinates
+    private LinkedList<Entry<Integer, Integer>> finishCoords = new LinkedList<>();
+
+    //Values of grid's borders
+    int gridsBorderX = 0, gridsBorderY = 0;
+
+
+    /**
+     * Proceeds input from text file as coordinates, pushes pairs to linked lists and updates grid's borders
+     * @throws IOException may be caused by BufferedReader.readLine() method if an I/O error occurs
+     */
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("path/to/input/file"));
+        BufferedReader bf = new BufferedReader(new FileReader("path/to/input file"));
         String currentLine = "";
 
         while ((currentLine = bf.readLine()) != null) {
             Matcher matcher = Pattern.compile("\\d+").matcher(currentLine);
-            int[] currentRowCoords = new int[4]; int curRowsCoordIndex = 0;
+
+            int[] currentRowCoords = new int[4]; //Array to store current line's coordinates (x1, y1) and (x2, y2)
+            int curRowsCoordIndex = 0;
 
             while (matcher.find()) {
                 currentRowCoords[curRowsCoordIndex++] = Integer.parseInt(matcher.group());
             }
 
+            //Create pairs of coordinates
             startCoords.add(Map.entry(currentRowCoords[0], currentRowCoords[1]));
             finishCoords.add(Map.entry(currentRowCoords[2], currentRowCoords[3]));
 
-            maxX = Math.max(Math.max(maxX, currentRowCoords[0]), currentRowCoords[2]);
-            maxY = Math.max(Math.max(maxY, currentRowCoords[1]), currentRowCoords[3]);
+            //Update grid's borders
+            gridsBorderX = Math.max(Math.max(gridsBorderX, currentRowCoords[0]), currentRowCoords[2]);
+            gridsBorderY = Math.max(Math.max(gridsBorderY, currentRowCoords[1]), currentRowCoords[3]);
         }
 
         bf.close();
@@ -36,15 +51,19 @@ class Solution {
         processGrid();
     }
 
-
     
+    /**
+     * Initializes grid and modifies it by adding numbers to it based on coordinates from linked lists
+     */
     private void processGrid() {
-        char[][] grid = new char[maxY + 1][maxX + 1];
+        //Declare and initialize grid
+        char[][] grid = new char[gridsBorderY + 1][gridsBorderX + 1];
         for (int i = 0; i < grid.length; ++i) {
             for (int j = 0; j < grid[0].length; ++j) {
                 grid[i][j] = '.';
             }
         }
+
 
         for (int currentCoordsIndex = 0; currentCoordsIndex < startCoords.size(); ++currentCoordsIndex) {
             int currentX = startCoords.get(currentCoordsIndex).getKey();
@@ -54,10 +73,11 @@ class Solution {
             int finishY = finishCoords.get(currentCoordsIndex).getValue();
 
 
-            if (currentX == finishX) {  //startX == finishX - same column
+            if (currentX == finishX) {  //same column
                 int temp = finishY;
                 finishY = Math.max(currentY, finishY);
                 currentY = Math.min(currentY, temp);
+
                 for (; currentY <= finishY;  currentY += (currentY > finishY) ? -1 : 1) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
@@ -67,6 +87,7 @@ class Solution {
                 int temp = finishX;
                 finishX = Math.max(currentX, finishX);
                 currentX = Math.min(currentX, temp);
+
                 for (; currentX <= finishX; currentX += (currentX > finishX) ? -1 : 1) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
@@ -84,21 +105,27 @@ class Solution {
             }
         }
 
-        // printGrid(grid);
         countCells(grid);
     }
 
-
+    /**
+     * Prints grid's content
+     * @param grid 2D char array storing dots and numbers of hydrothermal vents
+     */
     private void printGrid(char[][] grid) {
-        for (int r = 0; r < grid.length; ++r) {
-            for (int c = 0; c < grid[0].length; ++c) {
-                System.out.print(grid[r][c] + " ");
+        for (int row = 0; row < grid.length; ++row) {
+            for (int col = 0; col < grid[0].length; ++col) {
+                System.out.print(grid[row][col] + " ");
             }
             System.out.println();
         }
     }
 
 
+    /**
+     * Counts cells which have values greater than or equal to 2 and prints the answer to the console
+     * @param grid 2D char array storing dots and numbers of hydrothermal vents
+     */
     private void countCells(char[][] grid) {
         int counter = 0;
 
@@ -113,6 +140,7 @@ class Solution {
         System.out.println(counter);
     }
 }
+
 
 public class App {
     public static void main(String[] args) throws Exception {
