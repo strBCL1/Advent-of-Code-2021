@@ -13,7 +13,7 @@ class Solution {
     int maxX = 0, maxY = 0;
 
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 5/Part 1/input.txt"));
+        BufferedReader bf = new BufferedReader(new FileReader("path/to/input/file"));
         String currentLine = "";
 
         while ((currentLine = bf.readLine()) != null) {
