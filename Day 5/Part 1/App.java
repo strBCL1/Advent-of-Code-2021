@@ -71,12 +71,37 @@ class Solution {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
+
+            else { //different rows and different columns
+                int temp = finishY;
+                finishY = Math.max(currentY, finishY);
+                currentY = Math.min(currentY, temp);
+
+                temp = finishX;
+                finishX =  Math.max(currentX, finishX);
+                currentX = Math.min(currentX, temp);
+
+                for (; currentY <= finishY; currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1 ) {
+                    grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
+                }
+            }
         }
 
-        // printGrid(grid);
+        printGrid(grid);
         countCells(grid);
     }
 
+
+    // 1 . 1 . . . . 1 1 . 
+    // . 1 1 1 . . . 2 . . 
+    // . . 2 . 1 . 1 1 1 . 
+    // . . . 1 . 2 . 2 . . 
+    // . 1 1 2 2 1 3 2 1 1 
+    // . . . 1 . 2 . . . . 
+    // . . 1 . . . 1 . . . 
+    // . 1 . . . . . 1 . . 
+    // 1 . . . . . . . 1 . 
+    // 2 2 2 1 1 1 . . . .
 
     private void printGrid(char[][] grid) {
         for (int r = 0; r < grid.length; ++r) {
