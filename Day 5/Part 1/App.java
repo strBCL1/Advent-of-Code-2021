@@ -13,7 +13,7 @@ class Solution {
     int maxX = 0, maxY = 0;
 
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/Рабочий стол/VSCode Workspace/Java Language/AoC/Day 5/Part 1/input.txt"));
+        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 5/Part 1/input.txt"));
         String currentLine = "";
 
         while ((currentLine = bf.readLine()) != null) {
@@ -63,9 +63,9 @@ class Solution {
                 }
             }
 
-            else if (currentY == finishY) {//same row
+            else if (currentY == finishY) { //same row
                 int temp = finishX;
-                finishX =  Math.max(currentX, finishX);
+                finishX = Math.max(currentX, finishX);
                 currentX = Math.min(currentX, temp);
                 for (; currentX <= finishX; currentX += (currentX > finishX) ? -1 : 1) {
                     grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
@@ -73,35 +73,21 @@ class Solution {
             }
 
             else { //different rows and different columns
-                int temp = finishY;
-                finishY = Math.max(currentY, finishY);
-                currentY = Math.min(currentY, temp);
+                int amountOfMoves = Math.max(Math.abs(finishX - currentX), Math.abs(finishY - currentY));
 
-                temp = finishX;
-                finishX =  Math.max(currentX, finishX);
-                currentX = Math.min(currentX, temp);
-
-                for (; currentY <= finishY; currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1 ) {
-                    grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
+                for ( ; amountOfMoves >= 0 && 
+                    ((currentX > finishX) ? (currentX >= finishX) : (currentX <= finishX)) && 
+                    ((currentY > finishY) ? (currentY >= finishY) : (currentY <= finishY)); 
+                    currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1, --amountOfMoves) {
+                            grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
         }
 
-        printGrid(grid);
+        // printGrid(grid);
         countCells(grid);
     }
 
-
-    // 1 . 1 . . . . 1 1 . 
-    // . 1 1 1 . . . 2 . . 
-    // . . 2 . 1 . 1 1 1 . 
-    // . . . 1 . 2 . 2 . . 
-    // . 1 1 2 2 1 3 2 1 1 
-    // . . . 1 . 2 . . . . 
-    // . . 1 . . . 1 . . . 
-    // . 1 . . . . . 1 . . 
-    // 1 . . . . . . . 1 . 
-    // 2 2 2 1 1 1 . . . .
 
     private void printGrid(char[][] grid) {
         for (int r = 0; r < grid.length; ++r) {
@@ -115,6 +101,7 @@ class Solution {
 
     private void countCells(char[][] grid) {
         int counter = 0;
+
         for (int i = 0; i < grid.length; ++i) {
             for (int j = 0; j < grid[0].length; ++j) {
                 if ((char)grid[i][j] >= '2') {
