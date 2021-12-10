@@ -5,57 +5,73 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Performs brute-force solution of lanternfishes problem
+ * It won't work in Part 2 due to stack overflow
+ */
 class Solution {
-    final private int AMOUNT_OF_DAYS = 256;
-    private ArrayList<Integer> numbers = new ArrayList<Integer>();
+    final private int AMOUNT_OF_DAYS = 80;
+    private ArrayList<Integer> fishes = new ArrayList<Integer>();
 
 
+    /**
+     * Reads initial fishes and puts them into arraylist
+     * @throws IOException if input file is not found
+     */
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 6/Part 1/input.txt"));
+        BufferedReader bf = new BufferedReader(new FileReader("path/to/input/file"));
         String currentLine = "";
         
+        //Extract all fishes from row and place them in arraylist
         while ((currentLine = bf.readLine()) != null) {
             Matcher matcher = Pattern.compile("\\d+").matcher(currentLine);
 
             while (matcher.find()) {
-                int currentNumber = Integer.parseInt(matcher.group());
-                numbers.add(currentNumber);
+                fishes.add(Integer.parseInt(matcher.group()));
             }
         }
 
         bf.close();
 
-        countLanternfishes();
+        //Calculate the amount of fishes
+        long answer = countLanternfishes();
+        System.out.println(answer);
     }
 
 
-    private void countLanternfishes() {
+    /**
+     * Counts amounts of lanternfishes in a brute-force way
+     * It won't work in Part 2 due to stack overflow
+     */
+    private long countLanternfishes() {
         int currentDay = 0;
-        int currentSize = numbers.size();
-        int currentIndex = 0;
+        int currentSize = fishes.size(); //Fix size to avoid infinite loop
+        int currentFishesIndex = 0;
 
         while (currentDay <= AMOUNT_OF_DAYS) {
-            if (currentIndex == currentSize) {
-                currentSize = numbers.size();
-                currentIndex = 0;
+            //If current pos in arraylist if last one comparing to fixed size variable:
+            //Update current fixed size, set index to zero to start again and update current day
+            if (currentFishesIndex == currentSize) {
+                currentSize = fishes.size();  
+                currentFishesIndex = 0;
                 currentDay += 1;
 
                 if (currentDay == AMOUNT_OF_DAYS) {
-                    System.out.println(numbers.size());
-                    return ;
+                    return fishes.size();
                 }
             }
 
-            numbers.set(currentIndex, numbers.get(currentIndex) - 1);
+            fishes.set(currentFishesIndex, fishes.get(currentFishesIndex) - 1);
 
-            if (numbers.get(currentIndex) < 0) {
-                numbers.set(currentIndex, 6);
-                numbers.add(8);
+            if (fishes.get(currentFishesIndex) < 0) {
+                fishes.set(currentFishesIndex, 6);
+                fishes.add(8);
             }
 
-            currentIndex++;
-            
+            currentFishesIndex++;
         }
+
+        return fishes.size();
     }
 }
 
