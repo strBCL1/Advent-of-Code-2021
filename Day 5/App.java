@@ -8,6 +8,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+/**
+ * Contains methods to read input from text file, calculate rows and columns overlappings,
+ * count calculated cells and print the whole grid
+ */
 class Solution {
     //Store pairs of starting coordinates
     private LinkedList<Entry<Integer, Integer>> startCoords = new LinkedList<>();
@@ -73,7 +77,9 @@ class Solution {
             int finishY = finishCoords.get(currentCoordsIndex).getValue();
 
 
-            if (currentX == finishX || currentY == finishY) {  //same column
+            if (currentX == finishX || currentY == finishY) {  //Same column || same row
+
+                //Begin iterating from min value to max value, thus use temp variable to determine them
                 int temp = finishY;
                 finishY = Math.max(currentY, finishY);
                 currentY = Math.min(currentY, temp);
@@ -82,32 +88,37 @@ class Solution {
                 finishX = Math.max(currentX, finishX);
                 currentX = Math.min(currentX, temp);
 
+                //Var to store amount of moves to be performed to avoid infinite loop
                 int amountOfMoves = Math.max(Math.abs(finishX - currentX), Math.abs(finishY - currentY));
 
+                //Iteration from min value to max value
                 for (; amountOfMoves >= 0 && 
                     (currentX == finishX ? (currentY <= finishY) : (currentX <= finishX));
                     currentY += ((currentY > finishY) ? -1 : (currentY == finishY) ? 0 : 1), 
                     currentX += ((currentX > finishX) ? -1 : (currentX == finishX) ? 0 : 1), 
                     --amountOfMoves) {
-                    grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
+                        grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
 
-            else { //different rows and different columns
+            else {  //Different rows and different columns
                 int amountOfMoves = Math.max(Math.abs(finishX - currentX), Math.abs(finishY - currentY));
 
+                //Iteration from min value to max value
                 for ( ; amountOfMoves >= 0 && 
                     ((currentX > finishX) ? (currentX >= finishX) : (currentX <= finishX)) && 
                     ((currentY > finishY) ? (currentY >= finishY) : (currentY <= finishY)); 
-                    currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1, --amountOfMoves) {
-                            grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
+                    currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1, 
+                    --amountOfMoves) {
+                        grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
             }
         }
 
-        countCells(grid);
+        countOverlappingCells(grid);
     }
 
+    
     /**
      * Prints grid's content
      * @param grid 2D char array storing dots and numbers of hydrothermal vents
@@ -126,7 +137,7 @@ class Solution {
      * Counts cells which have values greater than or equal to 2 and prints the answer to the console
      * @param grid 2D char array storing dots and numbers of hydrothermal vents
      */
-    private void countCells(char[][] grid) {
+    private void countOverlappingCells(char[][] grid) {
         int counter = 0;
 
         for (int i = 0; i < grid.length; ++i) {
