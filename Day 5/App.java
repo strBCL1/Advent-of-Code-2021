@@ -28,7 +28,7 @@ class Solution {
      * @throws IOException may be caused by BufferedReader.readLine() method if an I/O error occurs
      */
     public void readFromFile() throws IOException {
-        BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 5/input.txt")); //"path/to/input file"
+        BufferedReader bf = new BufferedReader(new FileReader("/path/to/input file")); //Specify input file
         String currentLine = "";
 
         while ((currentLine = bf.readLine()) != null) {
