@@ -108,7 +108,8 @@ class Solution {
                 for ( ; amountOfMoves >= 0 && 
                     ((currentX > finishX) ? (currentX >= finishX) : (currentX <= finishX)) && 
                     ((currentY > finishY) ? (currentY >= finishY) : (currentY <= finishY)); 
-                    currentX += (currentX > finishX) ? -1 : 1, currentY += (currentY > finishY) ? -1 : 1, 
+                    currentX += (currentX > finishX) ? -1 : 1, 
+                    currentY += (currentY > finishY) ? -1 : 1, 
                     --amountOfMoves) {
                         grid[currentY][currentX] = grid[currentY][currentX] == '.' ? '1' : (char)(grid[currentY][currentX] + 1);
                 }
