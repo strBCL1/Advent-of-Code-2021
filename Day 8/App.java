@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,10 +23,12 @@ class Day8 {
         {8, 7},
     }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
+
     private Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
     private ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
     private ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
     private ArrayList<String> digitsAsStrings = new ArrayList<>(); // Digits coming after pipe, e.g. | cdfeb fcadb cdfeb cdbaf.
+
 
     public void processInput() {
         try (BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 8/input.txt"))) {
@@ -38,6 +41,9 @@ class Day8 {
                     if (currentSequence.equals("|")) {
                         pipeIsReached = true; continue;
                     }
+
+                    // Sort current fragment to properly compare digits coming after pipe
+                    Arrays.sort(currentSequence.toCharArray());
 
                     if (pipeIsReached) {
                         digitsAsStrings.add(currentSequence); continue;
@@ -123,8 +129,10 @@ class Day8 {
         currentPattern.append(calculateSequence(positionToString.get(8), currentPattern.toString(), Operation.SUBTRACTION)); // 2 = {8} - {W}
 
         
-        System.out.println(currentPattern.toString());
+        processDigitsComingAfterPipe();
+        // System.out.println(currentPattern.toString());
     }
+
 
     private String calculateSequence(String stringOne, String stringTwo, Operation operation) {
         HashMap<Character, Integer> charsOccurences = new HashMap<>();
@@ -155,6 +163,35 @@ class Day8 {
 
         return answer.toString();
     }
+
+
+    private void processDigitsComingAfterPipe() {
+        StringBuilder currentNumber = new StringBuilder();
+        int totalSum = 0;
+
+        for (String currentDigit : digitsAsStrings) {
+            Stream<Integer> a = positionToString
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> currentDigit.equals(entry.getValue()))
+                    .map(Map.Entry::getKey);
+
+            
+            if (!a.findAny().isPresent()) { // If stream is not empty:
+                a.forEach(digit -> currentNumber.append(digit));
+            }
+
+            //Check if current digit coming after pipe IS in fragmentOfLenFive using streams
+            // https://medium.com/swlh/understanding-java-streams-e0f2df12441f
+            a = fragmentsOfLenFive
+            .stream()
+            .filter(digit -> currentDigit.equals(digit))
+            .forEach(digit -> currentNumber.append(digit));
+        }
+
+        System.out.println(currentNumber.toString());
+    }
+
 
     private enum Operation {
         ADDITION, SUBTRACTION
