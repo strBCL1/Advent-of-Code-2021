@@ -25,14 +25,24 @@ class Day8 {
     private Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
     private ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
     private ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
+    private ArrayList<String> digitsAsStrings = new ArrayList<>(); // Digits coming after pipe, e.g. | cdfeb fcadb cdfeb cdbaf.
 
     public void processInput() {
-        try (BufferedReader bf = new BufferedReader(new FileReader("./input.txt"))) {
+        try (BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 8/input.txt"))) {
             // String currentLine = "";
             String currentLine = bf.readLine();
+            boolean pipeIsReached = false;
 
             // while ((currentLine = bf.readLine()) != null) {
                 for (String currentSequence : currentLine.split(" ")) {
+                    if (currentSequence.equals("|")) {
+                        pipeIsReached = true; continue;
+                    }
+
+                    if (pipeIsReached) {
+                        digitsAsStrings.add(currentSequence); continue;
+                    }
+
                     switch (currentSequence.length()) {
                         case 2: 
                             positionToString.put(1, currentSequence); break;
@@ -71,16 +81,49 @@ class Day8 {
             7
      */
     private void discoverPattern() {
-        String stringOne = positionToString.get(7);
-        String stringTwo = positionToString.get(1);
-        String result = calculateSequence(stringOne, stringTwo, Operation.SUBTRACTION);        
-        currentPattern.append(result); //Append "1"
 
-
-        stringOne = positionToString.get(2);
-        stringTwo = fragmentsOfLenFive.get(0);
-        result = calculateSequence(stringOne, stringTwo, Operation.ADDITION);
+        // 1 = {7} - {1}
+        String result = calculateSequence(positionToString.get(7), positionToString.get(1), Operation.SUBTRACTION);        
         currentPattern.append(result);
+
+
+        result = calculateSequence(fragmentsOfLenFive.get(0), fragmentsOfLenFive.get(1), Operation.ADDITION); // 147 = {2 / 3 / 5} + {2 / 3 / 5} 
+        currentPattern.append(calculateSequence(result, positionToString.get(4), Operation.ADDITION)); // 4 = {147} + {4}
+
+        
+        for (int i = 0; i < fragmentsOfLenSix.size(); ++i) { // 7 = {147} + {0} - {W}
+            result = calculateSequence(result, fragmentsOfLenSix.get(i), Operation.ADDITION);
+            if (result != null && result.length() == 2) { 
+                currentPattern.append(calculateSequence(result, currentPattern.toString(), Operation.SUBTRACTION));
+            }    
+        }
+
+
+        for (int i = 0; i < fragmentsOfLenSix.size(); ++i) { // 5 = {9} - {8}
+            if (currentPattern.toString().length() == 3) {
+                result = calculateSequence(fragmentsOfLenSix.get(i), positionToString.get(8), Operation.ADDITION); 
+                if (result.length() == 6 && calculateSequence(result, currentPattern.toString(), Operation.ADDITION).length() == 3) { //Check if current 6-length fragment is 9:
+                    currentPattern.append(calculateSequence(positionToString.get(8), fragmentsOfLenSix.get(i), Operation.SUBTRACTION));
+                }
+            }
+        }
+
+
+        for (int i = 0; i < fragmentsOfLenSix.size(); ++i) { // 6 = {6} + {1}
+            result = calculateSequence(fragmentsOfLenSix.get(i), positionToString.get(1), Operation.ADDITION);
+            if (result.length() == 1) {
+                currentPattern.append(result);
+            }
+        }
+
+
+        currentPattern.append(calculateSequence(positionToString.get(1), currentPattern.toString(), Operation.SUBTRACTION)); // 3 = {1} - {W}
+
+
+        currentPattern.append(calculateSequence(positionToString.get(8), currentPattern.toString(), Operation.SUBTRACTION)); // 2 = {8} - {W}
+
+        
+        System.out.println(currentPattern.toString());
     }
 
     private String calculateSequence(String stringOne, String stringTwo, Operation operation) {
