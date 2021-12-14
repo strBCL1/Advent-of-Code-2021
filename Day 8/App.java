@@ -2,14 +2,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class Day8 {
-    private final Map<Integer, Integer> M = Stream.of(new Object[][] {
+    private StringBuilder currentPattern = new StringBuilder();
+
+    private final Map<Integer, Integer> NUMS_AND_STICKS_AMOUNT = Stream.of(new Integer[][] {
         {1, 2},
         {7, 3},
         {4, 4},
@@ -20,120 +20,107 @@ class Day8 {
         {6, 6},
         {9, 6},
         {8, 7},
-        }).collect(Collectors.toMap(data -> (Integer) data[0], data -> (Integer) data[1]));
+    }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
-        private ArrayList<String> digits = new ArrayList<>();
-        private List<String> strings5 = new ArrayList<>();
-        private List<String> strings6 = new ArrayList<>();
-        private LinkedHashMap<Integer, String> positionsLetters = new LinkedHashMap<>();
+    private Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
+    private ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
+    private ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
 
-        private StringBuilder currentPattern = new StringBuilder();
-        
-    public int readFromFile() {
-            try (BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 8/input.txt"))) {
-                String currentLine = "";
-                boolean flag = false;
+    public void processInput() {
+        try (BufferedReader bf = new BufferedReader(new FileReader("./input.txt"))) {
+            // String currentLine = "";
+            String currentLine = bf.readLine();
 
-                //while ((currentLine = bf.readLine()) != null) {
-                
-                currentLine = bf.readLine();
-                for (String s : currentLine.split(" ")) {
-                    if (s.equals("|")) {
-                        flag = true;
-                        continue;
-                    }
+            // while ((currentLine = bf.readLine()) != null) {
+                for (String currentSequence : currentLine.split(" ")) {
+                    switch (currentSequence.length()) {
+                        case 2: 
+                            positionToString.put(1, currentSequence); break;
 
-                    if (flag == true) {
-                        digits.add(String.copyValueOf(s.toCharArray()));
-                        continue;
-                    }
+                        case 3:
+                            positionToString.put(7, currentSequence); break;
 
-                    switch (s.length()) {
-                        case 2: // current number is 1
-                            positionsLetters.put(1, s); 
-                            break;
+                        case 4:
+                            positionToString.put(4, currentSequence); break;
 
-                        case 3: // current number is 7
-                            positionsLetters.put(7, s);
-                            break;
+                        case 7:
+                            positionToString.put(8, currentSequence); break;
 
-                        case 4: // current number is 4
-                            positionsLetters.put(4, s);
-                            break;
+                        case 5: 
+                            fragmentsOfLenFive.add(currentSequence); break;
 
-                        case 7: // current number is 8
-                            positionsLetters.put(8, s);
-                            break;
-
-                        case 5: { // current number is 2 or 3 or 5
-                            strings5.add(s);
-                            break;
-                        }
-
-                        case 6: { // current number is 0 or 6 or 9
-                            strings6.add(s);
-                            break;
-                        }
-
+                        case 6: 
+                            fragmentsOfLenSix.add(currentSequence); break;
                     }
                 }
-                
-                //}
-            
-                createPattern();
+            // }
         }
-
         catch (Exception e) { }
 
-        return 0;
+        discoverPattern();
     }
 
-    private void createPattern() {
-        currentPattern.append( getLetter(positionsLetters.get(7), positionsLetters.get(1), "subtract") ); //{7} - {1}
-        // currentPattern.append( getLetter(positionsLetters.get(7), positionsLetters.get(1), "add").toString() )
+    /**
+     *      1
+          _____
+         |     |
+       2 |     | 3
+         |--4--|
+       5 |     | 6
+         |_____|
+            7
+     */
+    private void discoverPattern() {
+        String stringOne = positionToString.get(7);
+        String stringTwo = positionToString.get(1);
+        String result = calculateSequence(stringOne, stringTwo, Operation.SUBTRACTION);        
+        currentPattern.append(result); //Append "1"
 
-        // System.out.println(currentLetter);
+
+        stringOne = positionToString.get(2);
+        stringTwo = fragmentsOfLenFive.get(0);
+        result = calculateSequence(stringOne, stringTwo, Operation.ADDITION);
+        currentPattern.append(result);
     }
 
-    private char getLetter(String s1, String s2, String operation) {
-        HashMap<Character, Integer> occurences = new HashMap<>();
-        int i = 0, j = 0, maxValue = 0;
-        char curChar1, curChar2;
+    private String calculateSequence(String stringOne, String stringTwo, Operation operation) {
+        HashMap<Character, Integer> charsOccurences = new HashMap<>();
+        StringBuilder answer = new StringBuilder();
+        int maxValue = 0;
 
-        for ( ; i < s1.length() && j < s2.length(); ++i, ++j) {
-            curChar1 = s1.charAt(i); 
-            curChar2 = s2.charAt(j);
-
-            occurences.put(curChar1, occurences.getOrDefault(curChar1, 0) + 1);
-            occurences.put(curChar2, occurences.getOrDefault(curChar2, 0) + 1);
-
-            maxValue = Math.max(maxValue, Math.max(occurences.get(s1.charAt(i)), occurences.get(s2.charAt(j))));
+        for (int i = 0; i < stringOne.length(); ++i) {
+            Character currentCharacter = stringOne.charAt(i);
+            charsOccurences.put(currentCharacter, charsOccurences.getOrDefault(currentCharacter, 0) + 1);
+            maxValue = Math.max(maxValue, charsOccurences.get(currentCharacter));
         }
 
-        for (; i < s1.length(); ++i) {
-            curChar1 = s1.charAt(i);
-            occurences.put(curChar1, occurences.getOrDefault(curChar1, 0) + 1);
+        for (int j = 0; j < stringTwo.length(); ++j) {
+            Character currentCharacter = stringTwo.charAt(j);
+            charsOccurences.put(stringTwo.charAt(j), charsOccurences.getOrDefault(stringTwo.charAt(j), 0) + 1);
+            maxValue = Math.max(maxValue, charsOccurences.get(currentCharacter));
         }
 
-        for (; j < s2.length(); ++j) {
-            curChar2 = s2.charAt(j);
-            occurences.put(curChar2, occurences.getOrDefault(curChar2, 0) + 1);
-        }
-
-        for (var pair : occurences.entrySet()) {
-            if ((operation == "subtract" && pair.getValue() != maxValue) || (operation == "add" && pair.getValue() == maxValue)) {
-                return pair.getKey();
+        for (var pair : charsOccurences.entrySet()) {
+            if (operation == Operation.SUBTRACTION && pair.getValue() < maxValue) {
+                return Character.toString(pair.getKey());
             }
+            else if (operation == Operation.ADDITION && pair.getValue() == maxValue) {
+                answer.append(pair.getKey());
+            }
+                
         }
 
-        return '0';
+        return answer.toString();
+    }
+
+    private enum Operation {
+        ADDITION, SUBTRACTION
     }
 }
 
 public class App {
     public static void main(String[] args) throws Exception {
         Day8 object = new Day8();
-        System.out.println(object.readFromFile());
-
+        object.processInput();
     }
 }
