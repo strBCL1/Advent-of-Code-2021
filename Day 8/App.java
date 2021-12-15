@@ -1,52 +1,83 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class Day8 {
-    private StringBuilder currentPattern = new StringBuilder();
+    // private final Map<Integer, Integer> NUMS_AND_STICKS_AMOUNT = Stream.of(new Integer[][] {
+    //     {1, 2},
+    //     {7, 3},
+    //     {4, 4},
+    //     {2, 5},
+    //     {3, 5},
+    //     {5, 5},
+    //     {0, 6},
+    //     {6, 6},
+    //     {9, 6},
+    //     {8, 7},
+    // }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
-    private final Map<Integer, Integer> NUMS_AND_STICKS_AMOUNT = Stream.of(new Integer[][] {
-        {1, 2},
-        {7, 3},
-        {4, 4},
-        {2, 5},
-        {3, 5},
-        {5, 5},
-        {0, 6},
-        {6, 6},
-        {9, 6},
-        {8, 7},
-    }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-
-
-    private Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
-    private ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
-    private ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
-    private ArrayList<String> digitsAsStrings = new ArrayList<>(); // Digits coming after pipe, e.g. | cdfeb fcadb cdfeb cdbaf.
 
 
     public void processInput() {
+        StringBuilder currentPattern = new StringBuilder();
+
+
+        HashMap<Integer, String> numberOfStickToItsLetter = new HashMap<>() {
+            {
+                put(1, "");
+                put(2, "");
+                put(3, "");
+                put(4, "");
+                put(5, "");
+                put(6, "");
+                put(7, "");
+            }
+        };
+
+
+        Map<String, Integer> numberToItsSticks = Stream.of(new Object[][] {
+            {"123567", 0},
+            {"36", 1},
+            {"13457", 2},
+            {"13467", 3},
+            {"2346", 4},
+            {"12467", 5},
+            {"124567", 6},
+            {"136", 7},
+            {"1234567", 8},
+            {"123467", 9}
+        }).collect(Collectors.toMap(data -> (String) data[0], data -> (Integer) data[1]));
+
+
+        Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
+        ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
+        ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
+        ArrayList<String> digitsAfterPipe = new ArrayList<>(); // Digits coming after pipe, e.g. "| cdfeb fcadb cdfeb cdbaf".
+
         try (BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 8/input.txt"))) {
-            // String currentLine = "";
-            String currentLine = bf.readLine();
+            String currentLine = "";
+            // String currentLine = bf.readLine();
             boolean pipeIsReached = false;
 
-            // while ((currentLine = bf.readLine()) != null) {
+            while ((currentLine = bf.readLine()) != null) {
                 for (String currentSequence : currentLine.split(" ")) {
                     if (currentSequence.equals("|")) {
                         pipeIsReached = true; continue;
                     }
 
                     // Sort current fragment to properly compare digits coming after pipe
-                    Arrays.sort(currentSequence.toCharArray());
+                    currentSequence = currentSequence.chars()
+                                    .sorted()
+                                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                    .toString();
 
                     if (pipeIsReached) {
-                        digitsAsStrings.add(currentSequence); continue;
+                        digitsAfterPipe.add(currentSequence); continue;
                     }
 
                     switch (currentSequence.length()) {
@@ -69,11 +100,12 @@ class Day8 {
                             fragmentsOfLenSix.add(currentSequence); break;
                     }
                 }
-            // }
+            }
         }
         catch (Exception e) { }
 
-        discoverPattern();
+        discoverPattern(positionToString, fragmentsOfLenFive, fragmentsOfLenSix, numberOfStickToItsLetter, currentPattern);
+        processDigitsComingAfterPipe(numberToItsSticks, numberOfStickToItsLetter, digitsAfterPipe);
     }
 
     /**
@@ -86,21 +118,25 @@ class Day8 {
          |_____|
             7
      */
-    private void discoverPattern() {
+    private void discoverPattern(Map<Integer, String> positionToString, ArrayList<String> fragmentsOfLenFive, ArrayList<String> fragmentsOfLenSix, 
+                                HashMap<Integer, String> numberOfStickToItsLetter, StringBuilder currentPattern) {
 
         // 1 = {7} - {1}
-        String result = calculateSequence(positionToString.get(7), positionToString.get(1), Operation.SUBTRACTION);        
+        String result = calculateSequence(positionToString.get(7), positionToString.get(1), Operation.SUBTRACTION); 
+        numberOfStickToItsLetter.put(1, result);
         currentPattern.append(result);
 
 
         result = calculateSequence(fragmentsOfLenFive.get(0), fragmentsOfLenFive.get(1), Operation.ADDITION); // 147 = {2 / 3 / 5} + {2 / 3 / 5} 
         currentPattern.append(calculateSequence(result, positionToString.get(4), Operation.ADDITION)); // 4 = {147} + {4}
+        numberOfStickToItsLetter.put(4, Character.toString(currentPattern.toString().charAt(currentPattern.length() - 1))); 
 
         
         for (int i = 0; i < fragmentsOfLenSix.size(); ++i) { // 7 = {147} + {0} - {W}
             result = calculateSequence(result, fragmentsOfLenSix.get(i), Operation.ADDITION);
             if (result != null && result.length() == 2) { 
                 currentPattern.append(calculateSequence(result, currentPattern.toString(), Operation.SUBTRACTION));
+                numberOfStickToItsLetter.put(7, Character.toString(currentPattern.toString().charAt(currentPattern.length() - 1)));
             }    
         }
 
@@ -110,6 +146,7 @@ class Day8 {
                 result = calculateSequence(fragmentsOfLenSix.get(i), positionToString.get(8), Operation.ADDITION); 
                 if (result.length() == 6 && calculateSequence(result, currentPattern.toString(), Operation.ADDITION).length() == 3) { //Check if current 6-length fragment is 9:
                     currentPattern.append(calculateSequence(positionToString.get(8), fragmentsOfLenSix.get(i), Operation.SUBTRACTION));
+                    numberOfStickToItsLetter.put(5, Character.toString(currentPattern.toString().charAt(currentPattern.length() - 1)));
                 }
             }
         }
@@ -119,18 +156,21 @@ class Day8 {
             result = calculateSequence(fragmentsOfLenSix.get(i), positionToString.get(1), Operation.ADDITION);
             if (result.length() == 1) {
                 currentPattern.append(result);
+                numberOfStickToItsLetter.put(6, result);
             }
         }
 
 
         currentPattern.append(calculateSequence(positionToString.get(1), currentPattern.toString(), Operation.SUBTRACTION)); // 3 = {1} - {W}
+        numberOfStickToItsLetter.put(3, Character.toString(currentPattern.toString().charAt(currentPattern.length() - 1)));
 
 
         currentPattern.append(calculateSequence(positionToString.get(8), currentPattern.toString(), Operation.SUBTRACTION)); // 2 = {8} - {W}
+        numberOfStickToItsLetter.put(2, Character.toString(currentPattern.toString().charAt(currentPattern.length() - 1)));
 
-        
-        processDigitsComingAfterPipe();
+
         // System.out.println(currentPattern.toString());
+        // numberOfStickToItsLetter.entrySet().forEach(pair -> System.out.println(pair.getValue()));
     }
 
 
@@ -165,31 +205,39 @@ class Day8 {
     }
 
 
-    private void processDigitsComingAfterPipe() {
-        StringBuilder currentNumber = new StringBuilder();
-        int totalSum = 0;
+    private void processDigitsComingAfterPipe(Map<String, Integer> numberToItsSticks, HashMap<Integer, String> numberOfStickToItsLetter, ArrayList<String> digitsAfterPipe) {
+        Map<String, Integer> stickedStringToRealNumber = new TreeMap<>();
 
-        for (String currentDigit : digitsAsStrings) {
-            Stream<Integer> a = positionToString
-                    .entrySet()
-                    .stream()
-                    .filter(entry -> currentDigit.equals(entry.getValue()))
-                    .map(Map.Entry::getKey);
+        for (var entry : numberToItsSticks.entrySet()) {
+            StringBuilder s = new StringBuilder();
 
-            
-            if (!a.findAny().isPresent()) { // If stream is not empty:
-                a.forEach(digit -> currentNumber.append(digit));
+            for (char c : entry.getKey().toCharArray()) {
+                s.append(numberOfStickToItsLetter.get(c - '0'));
             }
 
-            //Check if current digit coming after pipe IS in fragmentOfLenFive using streams
-            // https://medium.com/swlh/understanding-java-streams-e0f2df12441f
-            a = fragmentsOfLenFive
-            .stream()
-            .filter(digit -> currentDigit.equals(digit))
-            .forEach(digit -> currentNumber.append(digit));
+            String sorted = s.chars()        // IntStream
+            .sorted()
+            .collect(StringBuilder::new,
+                    StringBuilder::appendCodePoint,
+                    StringBuilder::append)
+            .toString();
+
+            stickedStringToRealNumber.put(sorted, entry.getValue());
         }
 
-        System.out.println(currentNumber.toString());
+
+        StringBuilder currentAfterPipeNumber = new StringBuilder();
+        for (String digit : digitsAfterPipe) {
+            String sorted = digit.chars()
+                                    .sorted()
+                                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                    .toString();
+
+            currentAfterPipeNumber.append(stickedStringToRealNumber.get(sorted));
+        }
+
+        System.out.println(currentAfterPipeNumber.toString());
+        // stickedStringToRealNumber.entrySet().forEach(entry -> System.out.println(entry.getKey()));
     }
 
 
