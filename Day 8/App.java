@@ -2,8 +2,11 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,50 +24,33 @@ class Day8 {
     //     {8, 7},
     // }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
 
+    private enum Operation {
+        ADDITION, SUBTRACTION
+    }
 
+    private int totalSum = 0;
+
+    Map<Integer, String> numberOfStickToItsLetter = new HashMap<>(); // 1 -> 'a', 2 -> 'b', ...
+    { // Initialize map
+        for (int i = 1; i <= 7; ++i) { 
+            numberOfStickToItsLetter.put(i, ""); 
+        }
+    }
+    
 
     public void processInput() {
-        StringBuilder currentPattern = new StringBuilder();
 
-
-        HashMap<Integer, String> numberOfStickToItsLetter = new HashMap<>() {
-            {
-                put(1, "");
-                put(2, "");
-                put(3, "");
-                put(4, "");
-                put(5, "");
-                put(6, "");
-                put(7, "");
-            }
-        };
-
-
-        Map<String, Integer> numberToItsSticks = Stream.of(new Object[][] {
-            {"123567", 0},
-            {"36", 1},
-            {"13457", 2},
-            {"13467", 3},
-            {"2346", 4},
-            {"12467", 5},
-            {"124567", 6},
-            {"136", 7},
-            {"1234567", 8},
-            {"123467", 9}
-        }).collect(Collectors.toMap(data -> (String) data[0], data -> (Integer) data[1]));
-
-
-        Map<Integer, String> positionToString = new HashMap<>(); // {1} -> "ab", {7} -> "gab", ...
-        ArrayList<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
-        ArrayList<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
-        ArrayList<String> digitsAfterPipe = new ArrayList<>(); // Digits coming after pipe, e.g. "| cdfeb fcadb cdfeb cdbaf".
+        Map<Integer, String> uniqueDigits = new HashMap<>(); // Digits: 1, 4, 7, 8. 
+        List<String> fragmentsOfLenFive = new ArrayList<>(); // Fragments of length 5 for numbers: 2, 3 and 5.
+        List<String> fragmentsOfLenSix = new ArrayList<>();  // Fragments of length 6 for numbers: 0, 6 and 9.
+        List<String> digitsAfterPipe = new ArrayList<>(); // Digits coming after pipe, e.g. "| cdfeb fcadb cdfeb cdbaf".
 
         try (BufferedReader bf = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 8/input.txt"))) {
-            String currentLine = "";
-            // String currentLine = bf.readLine();
+            // String currentLine = "";
+            String currentLine = bf.readLine();
             boolean pipeIsReached = false;
 
-            while ((currentLine = bf.readLine()) != null) {
+            // while ((currentLine = bf.readLine()) != null) {
                 for (String currentSequence : currentLine.split(" ")) {
                     if (currentSequence.equals("|")) {
                         pipeIsReached = true; continue;
@@ -72,26 +58,28 @@ class Day8 {
 
                     // Sort current fragment to properly compare digits coming after pipe
                     currentSequence = currentSequence.chars()
-                                    .sorted()
-                                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                                    .toString();
+                                      .sorted()
+                                      .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                      .toString();
+                    // java.util.Arrays.sort(currentSequence.toCharArray()) -- doesn't work
+
 
                     if (pipeIsReached) {
                         digitsAfterPipe.add(currentSequence); continue;
                     }
 
                     switch (currentSequence.length()) {
-                        case 2: 
-                            positionToString.put(1, currentSequence); break;
-
+                        case 2:
+                            uniqueDigits.put(1, currentSequence); break;
+                            
                         case 3:
-                            positionToString.put(7, currentSequence); break;
+                            uniqueDigits.put(7, currentSequence); break;
 
                         case 4:
-                            positionToString.put(4, currentSequence); break;
+                            uniqueDigits.put(4, currentSequence); break;
 
                         case 7:
-                            positionToString.put(8, currentSequence); break;
+                            uniqueDigits.put(8, currentSequence); break;
 
                         case 5: 
                             fragmentsOfLenFive.add(currentSequence); break;
@@ -100,12 +88,13 @@ class Day8 {
                             fragmentsOfLenSix.add(currentSequence); break;
                     }
                 }
-            }
+            // }
         }
-        catch (Exception e) { }
+        catch (Exception e) {}
 
-        discoverPattern(positionToString, fragmentsOfLenFive, fragmentsOfLenSix, numberOfStickToItsLetter, currentPattern);
-        processDigitsComingAfterPipe(numberToItsSticks, numberOfStickToItsLetter, digitsAfterPipe);
+        discoverPattern(uniqueDigits, fragmentsOfLenFive, fragmentsOfLenSix);
+        processDigitsComingAfterPipe(uniqueDigits, digitsAfterPipe);
+        System.out.println(totalSum);
     }
 
     /**
@@ -118,8 +107,8 @@ class Day8 {
          |_____|
             7
      */
-    private void discoverPattern(Map<Integer, String> positionToString, ArrayList<String> fragmentsOfLenFive, ArrayList<String> fragmentsOfLenSix, 
-                                HashMap<Integer, String> numberOfStickToItsLetter, StringBuilder currentPattern) {
+    private void discoverPattern(Map<Integer, String> positionToString, List<String> fragmentsOfLenFive, List<String> fragmentsOfLenSix) {
+        StringBuilder currentPattern = new StringBuilder();
 
         // 1 = {7} - {1}
         String result = calculateSequence(positionToString.get(7), positionToString.get(1), Operation.SUBTRACTION); 
@@ -172,7 +161,7 @@ class Day8 {
         // System.out.println(currentPattern.toString());
         // numberOfStickToItsLetter.entrySet().forEach(pair -> System.out.println(pair.getValue()));
     }
-
+    
 
     private String calculateSequence(String stringOne, String stringTwo, Operation operation) {
         HashMap<Character, Integer> charsOccurences = new HashMap<>();
@@ -205,46 +194,46 @@ class Day8 {
     }
 
 
-    private void processDigitsComingAfterPipe(Map<String, Integer> numberToItsSticks, HashMap<Integer, String> numberOfStickToItsLetter, ArrayList<String> digitsAfterPipe) {
+    private void processDigitsComingAfterPipe(Map<Integer, String> uniqueDigits, List<String> digitsAfterPipe) {
         Map<String, Integer> stickedStringToRealNumber = new TreeMap<>();
+        final Map<String, Integer> STICKS_TO_NUMBER = Stream.of(new Object[][] { // Order of each digit, grouped by sticks' numbers
+            {"123567", 0},
+            {"36", 1},
+            {"13457", 2},
+            {"13467", 3},
+            {"2346", 4},
+            {"12467", 5},
+            {"124567", 6},
+            {"136", 7},
+            {"1234567", 8},
+            {"123467", 9}
+        }).collect(Collectors.toMap(data -> (String) data[0], data -> (Integer) data[1]));
 
-        for (var entry : numberToItsSticks.entrySet()) {
-            StringBuilder s = new StringBuilder();
+
+        for (var entry : STICKS_TO_NUMBER.entrySet()) {
+            Set<String> sortedDigit = new TreeSet<>();
 
             for (char c : entry.getKey().toCharArray()) {
-                s.append(numberOfStickToItsLetter.get(c - '0'));
+                String letter = numberOfStickToItsLetter.get(c - '0');
+                sortedDigit.add(letter);
             }
 
-            String sorted = s.chars()        // IntStream
-            .sorted()
-            .collect(StringBuilder::new,
-                    StringBuilder::appendCodePoint,
-                    StringBuilder::append)
-            .toString();
-
-            stickedStringToRealNumber.put(sorted, entry.getValue());
+            stickedStringToRealNumber.put(String.join("", sortedDigit), entry.getValue());
         }
 
 
-        StringBuilder currentAfterPipeNumber = new StringBuilder();
+        StringBuilder digitsAfterPipeNumber = new StringBuilder();
         for (String digit : digitsAfterPipe) {
-            String sorted = digit.chars()
-                                    .sorted()
-                                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                                    .toString();
-
-            currentAfterPipeNumber.append(stickedStringToRealNumber.get(sorted));
+            digitsAfterPipeNumber.append(stickedStringToRealNumber.get(digit));
         }
 
-        System.out.println(currentAfterPipeNumber.toString());
+        totalSum += Integer.parseInt(digitsAfterPipeNumber.toString());
+
+        // System.out.println(digitsAfterPipeNumber.toString());
         // stickedStringToRealNumber.entrySet().forEach(entry -> System.out.println(entry.getKey()));
     }
-
-
-    private enum Operation {
-        ADDITION, SUBTRACTION
-    }
 }
+
 
 public class App {
     public static void main(String[] args) throws Exception {
