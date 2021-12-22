@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * Solution based on: https://github.com/TheTurkeyDev/Advent-of-Code-2021/blob/main/src/dev/theturkey/aoc2021/Day08.java
- * Contains explanations to each calculation step.
- */
+
 class Day8 {
     private List<String> inputLines = new ArrayList<>();
     private int totalSum = 0;
