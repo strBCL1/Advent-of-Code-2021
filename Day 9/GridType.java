@@ -1,10 +1,8 @@
 class GridType {
     char value;
     boolean isChecked = false;
-    int x;
     int y;
-
-    GridType() {}
+    int x;
 
     GridType(char value, int y, int x) {
         this.value = value;

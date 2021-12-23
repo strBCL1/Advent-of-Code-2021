@@ -1,157 +1,191 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+/**
+ * Solves day 9 part 1 and part 2 puzzle.
+ * Reads input from text files, creates 2D grid, finds lowest points' sum and basins' sizes.
+ * Grid's height and width are provided manually.
+ */
 class Day9 {
     private final int GRID_HEIGHT = 100;
     private final int GRID_WIDTH = 100;
     private GridType[][] grid = new GridType[GRID_HEIGHT][GRID_WIDTH];
-    private int totalSum = 0;
-    private List<Integer> list = new ArrayList<>();
-    // private TreeMap<Integer, Integer> treemap = new TreeMap<>();
+    private int lowestPointsSum = 0;
+    private List<Integer> basinsSizes = new ArrayList<>();
 
 
+    /**
+     * Reads all lines of grid and places it in 2D array of custom type.
+     */
     public void readFromFile() {
-        try (BufferedReader br = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 9/src/input.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("./input.txt"))) {
             String currentLine = "";
             int lineCounter = 0;
 
             while ((currentLine = br.readLine()) != null) {
-                for (int i = 0; i < currentLine.length(); ++i) {
+                for (int i = 0; i < currentLine.length(); ++i) { // Initialize each cell of grid
                     grid[lineCounter][i] = new GridType(currentLine.charAt(i), lineCounter, i);
                 }
 
                 lineCounter++;
             }
 
-            sumMinCells();
+            findLowestPoints();
         } 
         
-        catch (Exception e) {
-            e.printStackTrace();
+        catch (FileNotFoundException FNFE) {
+            System.err.println("No input file found!");
+        }
+
+        catch (IOException IOE) {
+            System.err.println("I/O error occurred!");
         }
     }
 
 
-    private void sumMinCells() {
+    /**
+     * Calculates sum of lowest points.
+     * Traverses over adjacent cells, get their values and finds lowest points.
+     */
+    private void findLowestPoints() {
         for (int y = 0; y < GRID_HEIGHT; ++y) {
             for (int x = 0; x < GRID_WIDTH; ++x) {
                 char currentCellValue = grid[y][x].value;
 
-                if (currentCellValue == '9') {
+                if (currentCellValue == '9') { // Ignore highest points (of height '9')
                     continue;
                 }
+                
+                //https://www.geeksforgeeks.org/depth-first-traversal-dfs-on-a-2d-array/ - used to iterate over adjacent cells of each cell
+                // Get all values of adjacent cells
+                List<Character> adjacentCellsValues = new ArrayList<>();
+                int dRow[] = { 0, 1, 0, -1 };
+                int dCol[] = { -1, 0, 1, 0 };
+
+                for (int i = 0; i < 4; ++i) {
+                    int adjY = y + dRow[i];
+                    int adjX = x + dCol[i];
+                    
+                    //Avoid IndexOutOfBoundsException
+                    if (isInBounds(adjY, adjX) && grid[adjY][adjX].value > currentCellValue) {
+                        adjacentCellsValues.add(grid[adjY][adjX].value);
+                    }
+                }
+
 
                 int neighboursAmount = 0;
-                List<Character> valuesToCompareTo = new ArrayList<>();
 
-                if (isInBounds(y - 1, x) && grid[y - 1][x].value > currentCellValue) { // Prev line
-                    valuesToCompareTo.add(grid[y - 1][x].value);
-                }
-
-                if (isInBounds(y + 1, x) && grid[y + 1][x].value > currentCellValue) { // Next line
-                    valuesToCompareTo.add(grid[y + 1][x].value);
-                }
-
-                if (isInBounds(y, x - 1) && grid[y][x - 1].value > currentCellValue) { // Prev col
-                    valuesToCompareTo.add(grid[y][x - 1].value);
-                } 
-
-                if (isInBounds(y, x + 1) && grid[y][x + 1].value > currentCellValue) { // Next col
-                    valuesToCompareTo.add(grid[y][x + 1].value);
-                }
-
-
-                if (x > 0 && x < GRID_WIDTH - 1 && y > 0 && y < GRID_HEIGHT - 1) { // Value is in middle of grid - amount of its checked neighbours is 4
+                // Current cell is in middle of grid - it has 4 adjacent cells
+                if (x > 0 && x < GRID_WIDTH - 1 && y > 0 && y < GRID_HEIGHT - 1) { 
                     neighboursAmount = 4;
                 }
 
+                // Current cell isn't a corner cell and
+                // it is in first column or last column or
+                // it is in the first row or in last row - it has 3 adjacent cells
                 else if ((y > 0 && y < GRID_HEIGHT - 1 && (x == 0 || x == GRID_WIDTH - 1)) || 
-                         (x > 0 && x < GRID_WIDTH - 1 && (y == 0 || y == GRID_HEIGHT - 1))) { // Value is on the top or on the bottom line - ... is 3
+                         (x > 0 && x < GRID_WIDTH - 1 && (y == 0 || y == GRID_HEIGHT - 1))) { 
                     neighboursAmount = 3;
                 }
-
-                else { // Value is in the corner
+                
+                // Current cell is the corner cell - it has only 2 adjacent cells
+                else { 
                     neighboursAmount = 2;
                 }
 
-                if (valuesToCompareTo.size() != neighboursAmount) { // Ignore not appropriate neighbours amount
+                // If amount of neighbours of current cell isn't appropriate - ignore this case
+                if (adjacentCellsValues.size() != neighboursAmount) {
                     continue;
                 }
 
-                for (int i = 0; i < valuesToCompareTo.size(); ++i) {
-                    if (i == valuesToCompareTo.size() - 1) {
-                        totalSum += 1 + currentCellValue - '0'; // Part 1
-                        getBasinsSize(y, x);
-                    }
-                    else if (valuesToCompareTo.get(i) <= currentCellValue) {
+                for (int i = 0; i < adjacentCellsValues.size(); ++i) {
+                    // Current cell's value must be smaller than its adjacent cells' values
+                    if (adjacentCellsValues.get(i) <= currentCellValue) {
                         break;
+                    }
+
+                    else if (i == adjacentCellsValues.size() - 1) {
+                        lowestPointsSum += (currentCellValue - '0') + 1; // Part 1
+                        calculateCurrentBasinsSize(y, x); // Part 2
                     }
                 }
             }
         }
 
-        System.out.println(totalSum);
-
-        Collections.sort(list);
-        // list.forEach(e -> System.out.print(e + " "));
-
-        int sum = 1;
-
-        for (int i = list.size() - 1; i > list.size() - 4; --i) {
-            sum *= list.get(i);
+        
+        Collections.sort(basinsSizes);
+        int sumOfBasinsSizes = 1;
+        
+        // Multiplication of 3 largest basins' sizes
+        for (int i = basinsSizes.size() - 3; i < basinsSizes.size(); ++i) {
+            sumOfBasinsSizes *= basinsSizes.get(i);
         }
+        
 
-        // treemap.entrySet().forEach(entry -> System.out.println(entry.getKey() + " " + entry.getValue()));
-        System.out.println(sum);
+        System.out.println("Part 1 - sum of all lowest points: " + lowestPointsSum);
+        System.out.println("Part 2 - multiplication of 3 largest basins: " + sumOfBasinsSizes);
     }
 
 
-    private boolean isInBounds(int y, int x) {
-        return y >= 0 && y < GRID_HEIGHT && x >= 0 && x < GRID_WIDTH;
+    /**
+     * Checks if given 'x' and 'y' are not out of bounds of grid.
+     * @param currentY 'y' coordinate of cell being checked
+     * @param currentX 'x' coordinate of cell being checked
+     * @return true if indices aren't out of bounds, false otherwise
+     */
+    private boolean isInBounds(int currentY, int currentX) {
+        return currentY >= 0 && currentY < GRID_HEIGHT && 
+               currentX >= 0 && currentX < GRID_WIDTH;
     }
 
 
-    private void getBasinsSize(int y, int x) {
-        int currentSize = 0;
+    /**
+     * Calculates size of each basin using BFS traversal.
+     * Check https://www.geeksforgeeks.org/breadth-first-traversal-bfs-on-a-2d-array/ for more information
+     * @param currentY starting 'y' coordinate of current lowest point
+     * @param currentX starting 'x' coordinate of current lowest point
+     */
+    private void calculateCurrentBasinsSize(int currentY, int currentX) {
+        int currentBasinSize = 0;
 
         Queue<GridType> q = new LinkedList<>();
-        q.add(grid[y][x]);
+        q.add(grid[currentY][currentX]);
 
         while (!q.isEmpty()) {
             GridType currentCell = q.peek();
             q.remove();
 
-            x = currentCell.x;
-            y = currentCell.y;
-            currentSize++;
+            currentBasinSize++;
 
-            currentCell.isChecked = true;
+            currentX = currentCell.x;
+            currentY = currentCell.y;
 
             int dRow[] = { 0, 1, 0, -1 };
             int dCol[] = { -1, 0, 1, 0 };
 
             for (int i = 0; i < 4; ++i) {
-                int adjx = x + dRow[i];
-                int adjy = y + dCol[i];
+                int adjX = currentX + dRow[i];
+                int adjY = currentY + dCol[i];
 
-                if (!isInBounds(adjy, adjx)) {
+                if (!isInBounds(adjY, adjX)) {
                     continue;
                 }
 
-                if (!grid[adjy][adjx].isChecked && grid[adjy][adjx].value != '9' && grid[adjy][adjx].value > currentCell.value) {
-                    q.add(grid[adjy][adjx]);
-                    grid[adjy][adjx].isChecked = true;
+                if (!grid[adjY][adjX].isChecked && grid[adjY][adjX].value != '9' && grid[adjY][adjX].value > currentCell.value) {
+                    q.add(grid[adjY][adjX]);
+                    grid[adjY][adjX].isChecked = true;
                 }
             }
         }
         
-        // treemap.put(currentSize, treemap.getOrDefault(currentSize, 0) + 1);
-        list.add(currentSize);
+        basinsSizes.add(currentBasinSize);
     }
 }
 
