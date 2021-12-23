@@ -1,13 +1,19 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 class Day9 {
     private final int GRID_HEIGHT = 100;
     private final int GRID_WIDTH = 100;
-    private char[][] grid = new char[GRID_HEIGHT][GRID_WIDTH];
+    private GridType[][] grid = new GridType[GRID_HEIGHT][GRID_WIDTH];
     private int totalSum = 0;
+    private List<Integer> list = new ArrayList<>();
+    // private TreeMap<Integer, Integer> treemap = new TreeMap<>();
+
 
     public void readFromFile() {
         try (BufferedReader br = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 9/src/input.txt"))) {
@@ -16,7 +22,7 @@ class Day9 {
 
             while ((currentLine = br.readLine()) != null) {
                 for (int i = 0; i < currentLine.length(); ++i) {
-                    grid[lineCounter][i] = currentLine.charAt(i);
+                    grid[lineCounter][i] = new GridType(currentLine.charAt(i), lineCounter, i);
                 }
 
                 lineCounter++;
@@ -34,7 +40,7 @@ class Day9 {
     private void sumMinCells() {
         for (int y = 0; y < GRID_HEIGHT; ++y) {
             for (int x = 0; x < GRID_WIDTH; ++x) {
-                char currentCellValue = grid[y][x];
+                char currentCellValue = grid[y][x].value;
 
                 if (currentCellValue == '9') {
                     continue;
@@ -43,20 +49,20 @@ class Day9 {
                 int neighboursAmount = 0;
                 List<Character> valuesToCompareTo = new ArrayList<>();
 
-                if (isInBounds(y - 1, x) && grid[y - 1][x] > currentCellValue) { // Prev line
-                    valuesToCompareTo.add(grid[y - 1][x]);
+                if (isInBounds(y - 1, x) && grid[y - 1][x].value > currentCellValue) { // Prev line
+                    valuesToCompareTo.add(grid[y - 1][x].value);
                 }
 
-                if (isInBounds(y + 1, x) && grid[y + 1][x] > currentCellValue) { // Next line
-                    valuesToCompareTo.add(grid[y + 1][x]);
+                if (isInBounds(y + 1, x) && grid[y + 1][x].value > currentCellValue) { // Next line
+                    valuesToCompareTo.add(grid[y + 1][x].value);
                 }
 
-                if (isInBounds(y, x - 1) && grid[y][x - 1] > currentCellValue) { // Prev col
-                    valuesToCompareTo.add(grid[y][x - 1]);
+                if (isInBounds(y, x - 1) && grid[y][x - 1].value > currentCellValue) { // Prev col
+                    valuesToCompareTo.add(grid[y][x - 1].value);
                 } 
 
-                if (isInBounds(y, x + 1) && grid[y][x + 1] > currentCellValue) { // Next col
-                    valuesToCompareTo.add(grid[y][x + 1]);
+                if (isInBounds(y, x + 1) && grid[y][x + 1].value > currentCellValue) { // Next col
+                    valuesToCompareTo.add(grid[y][x + 1].value);
                 }
 
 
@@ -79,7 +85,8 @@ class Day9 {
 
                 for (int i = 0; i < valuesToCompareTo.size(); ++i) {
                     if (i == valuesToCompareTo.size() - 1) {
-                        totalSum += 1 + currentCellValue - '0';
+                        totalSum += 1 + currentCellValue - '0'; // Part 1
+                        getBasinsSize(y, x);
                     }
                     else if (valuesToCompareTo.get(i) <= currentCellValue) {
                         break;
@@ -89,11 +96,62 @@ class Day9 {
         }
 
         System.out.println(totalSum);
+
+        Collections.sort(list);
+        // list.forEach(e -> System.out.print(e + " "));
+
+        int sum = 1;
+
+        for (int i = list.size() - 1; i > list.size() - 4; --i) {
+            sum *= list.get(i);
+        }
+
+        // treemap.entrySet().forEach(entry -> System.out.println(entry.getKey() + " " + entry.getValue()));
+        System.out.println(sum);
     }
 
 
     private boolean isInBounds(int y, int x) {
         return y >= 0 && y < GRID_HEIGHT && x >= 0 && x < GRID_WIDTH;
+    }
+
+
+    private void getBasinsSize(int y, int x) {
+        int currentSize = 0;
+
+        Queue<GridType> q = new LinkedList<>();
+        q.add(grid[y][x]);
+
+        while (!q.isEmpty()) {
+            GridType currentCell = q.peek();
+            q.remove();
+
+            x = currentCell.x;
+            y = currentCell.y;
+            currentSize++;
+
+            currentCell.isChecked = true;
+
+            int dRow[] = { 0, 1, 0, -1 };
+            int dCol[] = { -1, 0, 1, 0 };
+
+            for (int i = 0; i < 4; ++i) {
+                int adjx = x + dRow[i];
+                int adjy = y + dCol[i];
+
+                if (!isInBounds(adjy, adjx)) {
+                    continue;
+                }
+
+                if (!grid[adjy][adjx].isChecked && grid[adjy][adjx].value != '9' && grid[adjy][adjx].value > currentCell.value) {
+                    q.add(grid[adjy][adjx]);
+                    grid[adjy][adjx].isChecked = true;
+                }
+            }
+        }
+        
+        // treemap.put(currentSize, treemap.getOrDefault(currentSize, 0) + 1);
+        list.add(currentSize);
     }
 }
 
