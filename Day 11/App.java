@@ -1,16 +1,50 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Queue;
 
 /*
+    Algorithm in english:
+    For each step:
+        For each grid element (octopus; octopus can only flash at most once per step):
+            If current element is visited (if this octopus has flashed):
+                Discard him
+
+            Add 1 to octopus
+            If octopus > 9:
+                Add his coords to queue
+
+        processQueue()
+
+    
+    processQueue():
+        While queue isn't empty:
+            Get head octopus and remove him from queue
+
+            If octopus is visited:
+                Discard him 
+
+            Mark octopus as visited
+            Octopus = 0
+            Add 1 to amount of flashes
+
+            For all octopus's neighbours:
+                If neighbour is visited:
+                    Discard the neighbour
+
+                Add 1 to neighbour
+                If neighbour > 9:
+                    Add his coords to queue
+
+    ==========================================================================
+
+    Алгоритм на русском:
     Для текущего шага:
         Для всех элементов матрицы:
             Если текущий элемент посещен:
-                Игнорировать его
+                Продолжить проверку матрицы
             
             Добавить к нему 1
             Если текущий элемент больше 9:
@@ -25,7 +59,7 @@ import java.util.Queue;
         Пока очередь не пустая:
             Взять первый элемент из очереди и удалить его из нее (далее "текущий элемент")
             Если текущий элемент посещен:
-                Продолжить итерацию
+                Продолжить итерацию очереди
             
             Пометить текущий элемент как посещенного
             Текущий элемент = 0
@@ -33,22 +67,31 @@ import java.util.Queue;
 
             Для всех соседей текущего элемента:
                 Если сосед посещен:
-                    Продолжить итерацию
+                    Продолжить итерацию соседей
 
                 Добавить к соседу 1
                 Если он больше 9:
                     Добавить его в очередь
 */
 
+
+/**
+ * Solves day 11 puzzle of Advent of Code 2021.
+ * Link to the puzzle: https://adventofcode.com/2021/day/11
+ * Solution contains explanations. Check line 8 for algorithm in english or russian.
+ */
 class Day11 {
     private static final int LINES_AMOUNT = 10, COLUMNS_AMOUNT = 10;
     private static int[][] grid = new int[LINES_AMOUNT][COLUMNS_AMOUNT];
-    private static int stepsAmount = 100;
-    private static int flashesAmount = 0; // Part 1 answer
+    private static int currentStep = 0;
+    private static int amountOfFlashes = 0;
 
 
+    /**
+     * Reads lines from input text file and initializes grid of octopuses.
+     */
     public void readFromFile() {
-        try (BufferedReader br = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 11/input.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("./input.txt"))) {
             String currentLine = "";
             int rowCounter = 0;
 
@@ -62,8 +105,6 @@ class Day11 {
 
 
             processGrid();
-            // System.out.println(Arrays.deepToString(grid));
-            System.out.println(flashesAmount);
         }
 
         catch (Exception e) {
@@ -73,27 +114,41 @@ class Day11 {
     }
 
 
+    /**
+     * Processes grid of octopuses until they all shine simultaneously.
+     */
     private void processGrid() {
-        while (stepsAmount-- > 0) {
+        while (!allAreFlashing()) {
             Queue<Entry<Integer, Integer>> q = new LinkedList<>();
             boolean[][] isVisitedCell = new boolean[LINES_AMOUNT][COLUMNS_AMOUNT];
 
             for (int y = 0; y < LINES_AMOUNT; ++y) {
                 for (int x = 0; x < COLUMNS_AMOUNT; ++x) {
-                    if (isVisitedCell[y][x]) {
+                    if (isVisitedCell[y][x]) { // Ignore visited octopuses
                         continue;
                     }
 
                     grid[y][x] += 1;
 
-                    if (grid[y][x] > 9) { // Add all '9' and higher to queue
+                    // Add all '9' and higher elements' coords to queue
+                    if (grid[y][x] > 9) {
+                        // https://stackoverflow.com/questions/6121246/list-of-entries-how-to-add-a-new-entry?lq=1
                         q.add(new AbstractMap.SimpleEntry<Integer, Integer> (y, x));
                     }
                 }
             }
 
-            processQueue(q, isVisitedCell);
+            // Process current queue containing octupuses > 9
+            processQueue(q, isVisitedCell); 
+
+            currentStep++;
+
+            if (currentStep == 100) { // Print part 1 answer
+                System.out.println("Amount of flashes after step 100: " + amountOfFlashes);
+            }
         }
+
+        System.out.println("The step all octopuses flash: " + currentStep); // Print part 2 answer
     }
 
 
@@ -109,7 +164,7 @@ class Day11 {
 
             isVisitedCell[curElementY][curElementX] = true;
             grid[curElementY][curElementX] = 0;
-            flashesAmount += 1; // Part 1 answer
+            amountOfFlashes += 1; // Part 1 answer
 
             int[] dRow = {-1, 0, 1};
             int[] dCol = {-1, 0, 1};
@@ -118,22 +173,19 @@ class Day11 {
                 for (int j = 0; j < 3; ++j) {
                     int adjY = curElementY + dRow[i];
                     int adjX = curElementX + dCol[j];
-
-                    // if (adjY == curElementY && adjX == curElementX) { // Ignore self-adding
-                    //     continue;
-                    // }
                     
-                    if (!isInBounds(adjY, adjX)) {
+                    if (!isInBounds(adjY, adjX)) { // Ignore out of bounds coords
                         continue;
                     }
 
-                    if (isVisitedCell[adjY][adjX]) {
+                    if (isVisitedCell[adjY][adjX]) { // Ignore visited octopuses
                         continue;
                     }
                     
                     grid[adjY][adjX] += 1;
 
                     if (grid[adjY][adjX] > 9) {
+                        // https://stackoverflow.com/questions/6121246/list-of-entries-how-to-add-a-new-entry?lq=1
                         q.add(new AbstractMap.SimpleEntry<Integer, Integer> (adjY, adjX));
                     }
                 }
@@ -142,10 +194,34 @@ class Day11 {
     }
 
 
+    /**
+     * Checks if all octopuses in grid shine simultaneously
+     * @return true if all octopuses in grid shine simultaneously. Else false. 
+     */
+    private boolean allAreFlashing() {
+        for (int y = 0; y < LINES_AMOUNT; ++y) {
+            for (int x = 0; x < COLUMNS_AMOUNT; ++x) {
+                if (grid[y][x] != 0) {
+                    return false; 
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Checks if coords of octopus being checked isn't out of bounds.
+     * @param y row of current element
+     * @param x column of current element
+     * @return true if coords of current element are within the grid's bounds. Else false. 
+     */
     private boolean isInBounds(int y, int x) {
         return y >= 0 && y < LINES_AMOUNT && x >= 0 && x < COLUMNS_AMOUNT;
     }
 }
+
 
 public class App {
     public static void main (String[] args) {
