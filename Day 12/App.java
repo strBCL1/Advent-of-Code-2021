@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,27 +14,35 @@ import java.util.stream.Collectors;
 /* Algorithm
 Создать граф (adj. list)
 
-BFS(q, visited, currentPath):
-    Если очередь пустая:
+DFS(stack, visited, currentPath):
+    Если стак пустой:
         Выписать кол-во путей
         Вернуть
 
+    Текущая вершина = стек.pop()
+
     Если текущая вершина == "старт":
-        Добавить всех ее соседей в очередь
-        Продолжить итерацию
+        Для всех соседей "старт": 
+            Добавить соседа в стак
+            DFS(stack, visited, currentPath)
+        Вернуть
+
+    Добавить текущую вершину в текущий путь
 
     Если текущая вершина == "конец":
         Выписать текущий путь
         Кол-во путей += 1
-        Продолжить итерацию
+        Вернуть / DFS(q, visited, currentPath)
 
     Если текущая вершина маленькая:
         Если текущая вершина посещена:
             Вернуть
         Пометить как посещенную
 
-    Добавить всех соседей вершины в очередь
-    BFS(q, visited, currentPath)
+    Для всех соседей текущей вершины:
+        Если сосед != "старт" и сосед не посещен:
+            Добавить соседа в стак
+            DFS(stack, visited, currentPath)
 */
 
 /* Solution in pseudocode
@@ -59,7 +68,7 @@ class Day12 {
 
 
     public void readFromFile() {
-        try (BufferedReader br = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 12/src/input.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("/home/mertens/VSCode Workspace/Java Language/Advent-of-Code-2021/Day 12/input.txt"))) {
             String currentLine = "";
             
             while ((currentLine = br.readLine()) != null) {
@@ -92,9 +101,9 @@ class Day12 {
             // visited.entrySet().forEach(e -> System.out.println(e.getKey() + " " + e.getValue())); // Print visited nodes
 
 
-            Queue<String> q = new ArrayDeque<>();
-            q.add("start");
-            BFS(q, visited, "start");
+            Queue<String> stack = Collections.asLifoQueue(new ArrayDeque<>());
+            stack.add("start");
+            DFS(stack, visited, "start");
         }
 
         catch (Exception e) {
@@ -103,44 +112,44 @@ class Day12 {
     }
 
 
-    private void BFS(Queue<String> q, Map<String, Boolean> visited, String currentPath) {
-        if (q.isEmpty()) {
+    private void DFS(Queue<String> stack, Map<String, Boolean> visited, String currentPath) {
+        if (stack.isEmpty()) {
             System.out.println("Amount of paths: " + paths.size());
             return ;
         }
 
-        String currentNode = q.poll();
-        
-        if (currentNode.equals("start")) { // If current node is "start"
-            for (String neighbour : adjList.get(currentNode)) {
-                q.add(neighbour);
+        String currentNode = stack.poll();
+
+        if (currentNode.equals("start")) {
+            for (String neighbour : adjList.get("start")) {
+                stack.add(neighbour);
+                DFS(stack, new HashMap<>(visited), currentPath);
             }
-            BFS(q, visited, currentPath);
             return ;
         }
 
-        currentPath += "," + currentNode; // Add current node to path
+        currentPath += "," + currentNode;
 
-        if (currentNode.equals("end")) { // If current node is "end"
-            paths.add(currentPath);
+        if (currentNode.equals("end")) {
             System.out.println("Current path: " + currentPath);
+            paths.add(currentPath);
+            DFS(stack, new HashMap<>(visited), currentPath);
             return ;
         }
-        
 
-        // Change current node to visited if it's lowercase node
-        if (currentNode.equals(currentNode.toLowerCase()) && !visited.get(currentNode)) {
-            visited.computeIfPresent(currentNode, (key, value) -> true);
+        if (currentNode.equals(currentNode.toLowerCase())) {
+            if (visited.get(currentNode) == true) {
+                return ;
+            }
+            visited.put(currentNode, true);
         }
 
-        // Add neighbours to queue
         for (String neighbour : adjList.get(currentNode)) {
             if (!neighbour.equals("start") && visited.getOrDefault(neighbour, false) == false) {
-                q.add(neighbour);
+                stack.add(neighbour);
+                DFS(stack, new HashMap<>(visited), currentPath);
             }
         }
-        
-        BFS(q, visited, currentPath);
     }
 }
 
