@@ -1,69 +1,16 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/* Algorithm
-Создать граф (adj. list)
-
-DFS(stack, visited, currentPath):
-    Если стак пустой:
-        Выписать кол-во путей
-        Вернуть
-
-    Текущая вершина = стек.pop()
-
-    Если текущая вершина == "старт":
-        Для всех соседей "старт": 
-            Добавить соседа в стак
-            DFS(stack, visited, currentPath)
-        Вернуть
-
-    Добавить текущую вершину в текущий путь
-
-    Если текущая вершина == "конец":
-        Выписать текущий путь
-        Кол-во путей += 1
-        Вернуть / DFS(q, visited, currentPath)
-
-    Если текущая вершина маленькая:
-        Если текущая вершина посещена:
-            Вернуть
-        Пометить как посещенную
-
-    Для всех соседей текущей вершины:
-        Если сосед != "старт" и сосед не посещен:
-            Добавить соседа в стак
-            DFS(stack, visited, currentPath)
-*/
-
-/* Solution in pseudocode
-
-Adj. list:
-start = ['A', 'b']
-A = ['c', 'start', 'b', 'end']
-b = ['A', 'start', 'd', 'end']
-c = ['A']
-d = ['b']
-end = ['A', 'b']
-
-
-Visited: (HashMap)
-c = false
-b = false
-d = false
-*/
 
 class Day12 {
-    private static Map<String, ArrayList<String>> adjList = new HashMap<>();
+    private static Map<String, ArrayList<String>> adjacencyList = new HashMap<>();
     private static Set<String> paths = new HashSet<>(); // Set of distinct paths
 
 
@@ -76,34 +23,25 @@ class Day12 {
                 String firstNode = halfes[0];
                 String secondNode = halfes[1];
 
-                if (adjList.containsKey(firstNode)) {
-                    adjList.get(firstNode).add(secondNode);
-                }
-                else {
-                    adjList.put(firstNode, new ArrayList<>(List.of(secondNode)));
+                if (adjacencyList.putIfAbsent(firstNode, new ArrayList<>(List.of(secondNode))) != null) {
+                    adjacencyList.get(firstNode).add(secondNode);
                 }
 
-                if (adjList.containsKey(secondNode)) {
-                    adjList.get(secondNode).add(firstNode);
-                }
-                else {
-                    adjList.put(secondNode, new ArrayList<>(List.of(firstNode)));
+                if (adjacencyList.putIfAbsent(secondNode, new ArrayList<>(List.of(firstNode))) != null) {
+                    adjacencyList.get(secondNode).add(firstNode);
                 }
 
             }
 
 
-            // adjList.entrySet().forEach(e -> System.out.println(e.getKey() + " " + e.getValue())); System.out.println();
-            Map<String, Boolean> visited = adjList.keySet().stream()
-                                           .filter(key -> !key.equals("start") && !key.equals("end") && key.equals(key.toLowerCase()))
-                                           .collect(Collectors.toMap(key -> key, value -> false));
-
-            // visited.entrySet().forEach(e -> System.out.println(e.getKey() + " " + e.getValue())); // Print visited nodes
+            Map<String, Boolean> visitedNodes = adjacencyList.keySet().stream()
+                                                .filter(key -> key.equals(key.toLowerCase()) && !key.equals("start") && !key.equals("end"))
+                                                .collect(Collectors.toMap(key -> key, value -> false));
 
 
-            Queue<String> stack = Collections.asLifoQueue(new ArrayDeque<>());
-            stack.add("start");
-            DFS(stack, visited, "start");
+            DFS("start", visitedNodes, "");
+
+            System.out.println(paths.size());
         }
 
         catch (Exception e) {
@@ -112,42 +50,31 @@ class Day12 {
     }
 
 
-    private void DFS(Queue<String> stack, Map<String, Boolean> visited, String currentPath) {
-        if (stack.isEmpty()) {
-            System.out.println("Amount of paths: " + paths.size());
-            return ;
+    private void DFS(String currentNode, Map<String, Boolean> visitedNodes, String currentPath) {
+        if (!currentPath.isEmpty()) {
+            currentPath += "," + currentNode;
         }
-
-        String currentNode = stack.poll();
 
         if (currentNode.equals("start")) {
-            for (String neighbour : adjList.get("start")) {
-                stack.add(neighbour);
-                DFS(stack, new HashMap<>(visited), currentPath);
+            for (String neighbour : adjacencyList.get("start")) {
+                DFS(neighbour, new HashMap<>(visitedNodes), "start");
             }
             return ;
         }
 
-        currentPath += "," + currentNode;
-
-        if (currentNode.equals("end")) {
-            System.out.println("Current path: " + currentPath);
+        else if (currentNode.equals("end")) {
             paths.add(currentPath);
-            DFS(stack, new HashMap<>(visited), currentPath);
+            System.out.println(currentPath);
             return ;
         }
 
-        if (currentNode.equals(currentNode.toLowerCase())) {
-            if (visited.get(currentNode) == true) {
-                return ;
-            }
-            visited.put(currentNode, true);
+        else if (currentNode.equals(currentNode.toLowerCase())) { // If current cave is small
+            visitedNodes.put(currentNode, true);
         }
 
-        for (String neighbour : adjList.get(currentNode)) {
-            if (!neighbour.equals("start") && visited.getOrDefault(neighbour, false) == false) {
-                stack.add(neighbour);
-                DFS(stack, new HashMap<>(visited), currentPath);
+        for (String neighbour : adjacencyList.get(currentNode)) {
+            if (!neighbour.equals("start") && visitedNodes.getOrDefault(neighbour, false) == false) {
+                DFS(neighbour, new HashMap<>(visitedNodes), currentPath);
             }
         }
     }
