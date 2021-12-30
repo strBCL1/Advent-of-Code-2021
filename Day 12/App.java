@@ -88,7 +88,7 @@ class Day12 {
                 String secondNode = halfes[1];
 
                 // If first node isn't in adjacency list, it is put into adj. list. 
-                // Only AFTER FIRST NODE'S ADDITION second nodes is added to first node's adjacency list.
+                // Only AFTER FIRST NODE'S ADDITION second node is added to first node's adjacency list.
                 if (adjacencyList.putIfAbsent(firstNode, new ArrayList<>(List.of(secondNode))) != null) {
                     adjacencyList.get(firstNode).add(secondNode);
                 }
