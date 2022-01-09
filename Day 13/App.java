@@ -1,5 +1,7 @@
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,6 +14,9 @@ import java.util.stream.Stream;
 class Day13 {
     // No same coords in input (x <-> y)
     private static Map<Integer, Set<Integer>> coordinatesMap = new HashMap<>();
+    private static int xBound = 0;
+    private static int yBound = 0;
+
 
     public void readFromFile() {
         try (Stream<String> inputStream = Files.lines(Paths.get(Day13.class.getResource("/input.txt").toURI()))) { 
@@ -24,9 +29,9 @@ class Day13 {
                     Matcher matcher = Pattern.compile("[0-9]+").matcher(line);
                     matcher.find();
 
-                    int coordinate = Integer.parseInt(matcher.group()); // Get the coordinate
+                    int foldCoordinate = Integer.parseInt(matcher.group()); // Get the coordinate
                     boolean foldAlongX = line.contains("x="); // Check if coordinate is 'x' or 'y'
-                    foldSheet(coordinate, foldAlongX); // Fold sheet
+                    foldSheet(foldCoordinate, foldAlongX); // Fold sheet
 
                     return ;
                 }
@@ -42,7 +47,31 @@ class Day13 {
 
             });
 
-            System.out.println(coordinatesMap);
+            // Calculate max 'y' bound
+            yBound = coordinatesMap.values().stream()
+                                            .mapToInt(set -> Collections.max(set))
+                                            .max()
+                                            .orElse(-1) + 1;
+
+            // Calculate max 'x' bound
+            xBound = Collections.max(coordinatesMap.keySet()) + 1;
+
+
+            char[][] grid = new char[yBound][xBound];
+            for (char[] row : grid) {
+                Arrays.fill(row, '.');
+            }
+
+            coordinatesMap.entrySet().stream()
+                                     .forEach(e -> {
+                                         e.getValue().forEach(y -> {
+                                             grid[y][e.getKey()] = '#';
+                                         });
+                                     });
+
+            Stream.of(grid)
+                  .flatMap(Stream::of)
+                  .forEach(System.out::println);
         }
 
         catch (Exception e) {
@@ -51,7 +80,7 @@ class Day13 {
     }
 
 
-    private void foldSheet(int coordinate, boolean foldAlongX) {
+    private void foldSheet(int foldCoordinate, boolean foldAlongX) {
         Map<Integer, Set<Integer>> copy = new HashMap<>(coordinatesMap);
 
         // Create deep copy of all sets of map
@@ -61,14 +90,15 @@ class Day13 {
         
         if (foldAlongX) { // Fold along 'x'
             coordinatesMap.entrySet().stream()
-                                     .filter(e -> e.getKey() > coordinate) // Get all 'x' greater than fold coord
+                                     .filter(e -> e.getKey() > foldCoordinate) // Get all 'x' greater than fold coord
                                      .forEach(e -> {
+                                        copy.remove(e.getKey()); // Remove current 'x' from copy map
+
                                          // Avoid "null pointer exception"
-                                         if (copy.computeIfAbsent(coordinate - e.getKey() + coordinate, set -> new HashSet<>()) != null) {
-                                            copy.get(coordinate - e.getKey() + coordinate).addAll(e.getValue());
+                                         if (copy.computeIfAbsent(foldCoordinate - e.getKey() + foldCoordinate, set -> new HashSet<>()) != null) {
+                                            copy.get(foldCoordinate - e.getKey() + foldCoordinate).addAll(e.getValue());
                                          }
 
-                                         copy.remove(e.getKey()); // Remove current 'x' from copy map
                                      });
         }
 
@@ -76,17 +106,17 @@ class Day13 {
             coordinatesMap.entrySet().stream()
                                      .forEach(entry -> {
                                          entry.getValue().stream()
-                                                .filter(y -> y > coordinate) // Get all 'y' greater than fold coord
+                                                .filter(y -> y > foldCoordinate) // Get all 'y' greater than fold coord
                                                 .forEach(y -> {
                                                     copy.get(entry.getKey()).remove(y); // Remove current 'y' from copy map
-                                                    copy.get(entry.getKey()).add(coordinate - y + coordinate);
+                                                    copy.get(entry.getKey()).add(foldCoordinate - y + foldCoordinate);
                                                 });
                                      });
             
         }
 
         // Print amount of cells of copy
-        System.out.println(copy.values().stream().mapToInt(set -> set.size()).sum());
+        // System.out.println(copy.values().stream().mapToInt(set -> set.size()).sum());
 
         coordinatesMap = new HashMap<>(copy);
     }
