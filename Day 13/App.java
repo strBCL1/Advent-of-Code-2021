@@ -12,12 +12,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 class Day13 {
-    // No same coords in input (x <-> y)
+    // Pairs of x <-> y coords. One column may contain multiple unique 'y' coords.
     private static Map<Integer, Set<Integer>> coordinatesMap = new HashMap<>();
-    private static int xBound = 0;
-    private static int yBound = 0;
+    private static int dotsAmountAfterFirstFold = 0; // Part 1 answer
 
 
+    /**
+     * Reads input lines from file. Creates pairs of coords and calls sheet fold function.
+     */
     public void readFromFile() {
         try (Stream<String> inputStream = Files.lines(Paths.get(Day13.class.getResource("/input.txt").toURI()))) { 
             inputStream.forEach(line -> {
@@ -29,8 +31,8 @@ class Day13 {
                     Matcher matcher = Pattern.compile("[0-9]+").matcher(line);
                     matcher.find();
 
-                    int foldCoordinate = Integer.parseInt(matcher.group()); // Get the coordinate
-                    boolean foldAlongX = line.contains("x="); // Check if coordinate is 'x' or 'y'
+                    int foldCoordinate = Integer.parseInt(matcher.group()); // Extract the fold coordinate
+                    boolean foldAlongX = line.contains("x="); // Check if coordinate is 'x' or 'y' axis
                     foldSheet(foldCoordinate, foldAlongX); // Fold sheet
 
                     return ;
@@ -40,7 +42,7 @@ class Day13 {
                 int x = Integer.parseInt(lineCoords[0]); // Extract 'x' coord
                 int y = Integer.parseInt(lineCoords[1]); // Extract 'y' coord
 
-                // If value is null, create set and insert 'y' into it
+                // Insert 'y' into an empty or already existing set
                 if (coordinatesMap.computeIfAbsent(x, set -> new HashSet<>()) != null) {
                     coordinatesMap.get(x).add(y);
                 }
@@ -48,27 +50,34 @@ class Day13 {
             });
 
             // Calculate max 'y' bound
-            yBound = coordinatesMap.values().stream()
+            int yBound = coordinatesMap.values().stream()
                                             .mapToInt(set -> Collections.max(set))
                                             .max()
                                             .orElse(-1) + 1;
 
             // Calculate max 'x' bound
-            xBound = Collections.max(coordinatesMap.keySet()) + 1;
+            int xBound = Collections.max(coordinatesMap.keySet()) + 1;
 
 
+            //Declare output grid that will contain a part 2 code
             char[][] grid = new char[yBound][xBound];
             for (char[] row : grid) {
                 Arrays.fill(row, '.');
             }
 
-            coordinatesMap.entrySet().stream()
-                                     .forEach(e -> {
-                                         e.getValue().forEach(y -> {
-                                             grid[y][e.getKey()] = '#';
-                                         });
-                                     });
 
+            for (Entry<Integer, Set<Integer>> e : coordinatesMap.entrySet()) {
+                for (int y : e.getValue()) {
+                    grid[y][e.getKey()] = '#';
+                }
+            }
+
+
+            // Part 1 answer
+            System.out.println("Dots amount after first fold: " + dotsAmountAfterFirstFold + "\n");
+
+
+            // Print code - part 2 answer
             Stream.of(grid)
                   .flatMap(Stream::of)
                   .forEach(System.out::println);
@@ -80,23 +89,30 @@ class Day13 {
     }
 
 
+    /**
+     * Folds sheet using pairs of coords. 
+     * @param foldCoordinate coordinate along which sheet must be folded
+     * @param foldAlongX true if fold to be done is along 'x' axis. Else false.
+     */
     private void foldSheet(int foldCoordinate, boolean foldAlongX) {
-        Map<Integer, Set<Integer>> copy = new HashMap<>(coordinatesMap);
+        // Create deep copy of current 'x' axis (without sets deep copying)
+        Map<Integer, Set<Integer>> coordinatesDeepCopyMap = new HashMap<>(coordinatesMap);
 
-        // Create deep copy of all sets of map
+        // Create deep copy of all sets of map ('y' axis)
         for (Entry<Integer, Set<Integer>> e : coordinatesMap.entrySet()) {
-            copy.put(e.getKey(), new HashSet<>(e.getValue()));
+            coordinatesDeepCopyMap.put(e.getKey(), new HashSet<>(e.getValue()));
         }
         
         if (foldAlongX) { // Fold along 'x'
             coordinatesMap.entrySet().stream()
-                                     .filter(e -> e.getKey() > foldCoordinate) // Get all 'x' greater than fold coord
+                                     .filter(e -> e.getKey() > foldCoordinate) // Get all 'x' coords that are greater than fold coord
                                      .forEach(e -> {
-                                        copy.remove(e.getKey()); // Remove current 'x' from copy map
+                                         coordinatesDeepCopyMap.remove(e.getKey()); // Remove all filtered 'x' coords from copy map
 
-                                         // Avoid "null pointer exception"
-                                         if (copy.computeIfAbsent(foldCoordinate - e.getKey() + foldCoordinate, set -> new HashSet<>()) != null) {
-                                            copy.get(foldCoordinate - e.getKey() + foldCoordinate).addAll(e.getValue());
+                                         // Add all sets of 'y' coords to their new corresponding columns 
+                                         // foldCoordinate - (e.getKey() - foldCoordinate) == foldCoordinate - e.getKey() + foldCoordinate
+                                         if (coordinatesDeepCopyMap.computeIfAbsent(foldCoordinate - e.getKey() + foldCoordinate, set -> new HashSet<>()) != null) {
+                                            coordinatesDeepCopyMap.get(foldCoordinate - e.getKey() + foldCoordinate).addAll(e.getValue());
                                          }
 
                                      });
@@ -106,19 +122,27 @@ class Day13 {
             coordinatesMap.entrySet().stream()
                                      .forEach(entry -> {
                                          entry.getValue().stream()
-                                                .filter(y -> y > foldCoordinate) // Get all 'y' greater than fold coord
-                                                .forEach(y -> {
-                                                    copy.get(entry.getKey()).remove(y); // Remove current 'y' from copy map
-                                                    copy.get(entry.getKey()).add(foldCoordinate - y + foldCoordinate);
-                                                });
+                                                         .filter(y -> y > foldCoordinate) // Get all 'y' greater than fold coord
+                                                         .forEach(y -> {
+                                                             coordinatesDeepCopyMap.get(entry.getKey()).remove(y); // Remove current 'y' from copy map
+
+                                                             // Add new 'y' folded coord corresponding to current 'y'
+                                                             // foldCoordinate - (y - foldCoordinate) == foldCoordinate - y + foldCoordinate
+                                                             coordinatesDeepCopyMap.get(entry.getKey()).add(foldCoordinate - y + foldCoordinate);
+                                                         });
                                      });
             
         }
 
-        // Print amount of cells of copy
-        // System.out.println(copy.values().stream().mapToInt(set -> set.size()).sum());
+        // Initialize amount of dots after first fold if it hasn't been initialized yet
+        if (dotsAmountAfterFirstFold == 0) {
+            dotsAmountAfterFirstFold = coordinatesDeepCopyMap.values().stream()
+                                                                      .mapToInt(set -> set.size())
+                                                                      .sum();
+        }
 
-        coordinatesMap = new HashMap<>(copy);
+        // Update reference to current map state
+        coordinatesMap = coordinatesDeepCopyMap;
     }
 }
 
