@@ -6,9 +6,9 @@ class Point implements Comparable<Point> {
 	int y, x;
 	
 	double g, h, f;
+	int parentY, parentX;
 	
 	Point(int riskLevel, int y, int x) {
-		super();
 		this.riskLevel = riskLevel;
 		this.y = y;
 		this.x = x;
@@ -21,6 +21,8 @@ class Point implements Comparable<Point> {
 		this.f = p.f;
 		this.h = p.h;
 		this.g = p.g;
+		this.parentY = p.parentY;
+		this.parentX = p.parentX;
 	}
 
 	@Override
@@ -51,15 +53,13 @@ class Point implements Comparable<Point> {
 	public int compareTo(Point o) {
 		return Comparator.comparing(Point::getF)
 				.thenComparing(Point::getH)
-				.thenComparing(Point::getG)
-				.thenComparing(Point::getRiskLevel)
 				.compare(this, o);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Point [riskLevel=" + riskLevel + ", y=" + y + ", x=" + x + ", g=" + g + ", h=" + h + ", f=" + f
-				+ "]";
+				+ ", parentY=" + parentY + ", parentX=" + parentX + "]";
 	}
 
 	public int getRiskLevel() {
