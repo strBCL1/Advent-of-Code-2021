@@ -1,20 +1,24 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.stream.Stream;
 
 class Solution {
-	private static List<List<Point>> grid = new LinkedList<>();
-	private static int lineCounter = 0;
+	private static List<List<Point>> grid = new ArrayList<>();
+	private static Queue<Point> openedList = new PriorityQueue<>();
+	private static List<Point> closedList = new ArrayList<>();
+	private static int lineCounter = 0, sum = 0;
+	private static Point nodeToPrint;
+	char[][] characters;
 	
 	//TODO: все координаты родителей равны 0 в closedList
 	public void readFromFile() {
 		try (Stream<String> inputStream = Files.lines(Path.of(Solution.class.getResource("/input.txt").toURI()))) {
 			inputStream.forEach(line -> {
-				List<Point> currentLine = new LinkedList<>();
+				List<Point> currentLine = new ArrayList<>();
 				
 				for (int i = 0; i < line.length(); ++i) {
 					currentLine.add(new Point(line.charAt(i) - '0', lineCounter, i));
@@ -26,6 +30,7 @@ class Solution {
 			
 			
 //			printGrid();
+			characters = new char[grid.size()][grid.get(0).size()];
 			findMinPath();
 		}
 		
@@ -36,9 +41,6 @@ class Solution {
 	
 	
 	private void findMinPath() {
-		Queue<Point> openedList = new PriorityQueue<>();
-		List<Point> closedList = new LinkedList<>();
-		
 		openedList.add(grid.get(0).get(0));
 		
 		while (!openedList.isEmpty()) {
@@ -50,9 +52,22 @@ class Solution {
 			// If cell is goal cell
 			if (cell.y == grid.size() - 1 && cell.x == grid.get(0).size() - 1) {
 					System.out.println("The path has been found!");
-//					closedList.forEach(p -> System.out.println(p));
-					traceBack(cell);
+					for (int i = 0; i < grid.size(); ++i) {
+						for (int j = 0; j < grid.get(0).size(); ++j) {
+							characters[i][j] = '.';
+						}
+					}
 					
+					nodeToPrint = cell;
+					traceBack();
+					
+					for (int i = 0; i < grid.size(); ++i) {
+						for (int j = 0; j < grid.get(0).size(); ++j) {
+							System.out.print(characters[i][j]);
+						}
+						System.out.println();
+					}
+					System.out.println(sum);
 					return ;
 			}
 			
@@ -87,13 +102,20 @@ class Solution {
 	}
 	
 	
-	private void traceBack(Point cell) {
-		if (cell.x == 0 && cell.y == 0) {
+	private void traceBack() {
+		if (nodeToPrint.y == 0 && nodeToPrint.x == 0) {
 			return ; 
 		}
-		var c = grid.get(cell.parentY).get(cell.parentX);
-		System.out.println(c);
-		traceBack(c);
+		characters[nodeToPrint.y][nodeToPrint.x] = '#';
+		sum += nodeToPrint.riskLevel;
+		
+		for (Point nodePoint : closedList) {
+			if (nodePoint.y == nodeToPrint.parentY && nodePoint.x == nodeToPrint.parentX) {
+				nodeToPrint = nodePoint;
+
+				traceBack();
+			}
+		}
 	}
 
 
@@ -103,7 +125,7 @@ class Solution {
 
 	
 	private List<Point> getNeighboursOf(Point cell) {
-		List<Point> neighbours = new LinkedList<>();
+		List<Point> neighbours = new ArrayList<>();
 		
 		int y = cell.y;
 		int x = cell.x;
