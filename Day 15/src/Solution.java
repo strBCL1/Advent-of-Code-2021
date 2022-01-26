@@ -11,10 +11,7 @@ class Solution {
 	private static Queue<Point> openedList = new PriorityQueue<>();
 	private static List<Point> closedList = new ArrayList<>();
 	private static int lineCounter = 0, sum = 0;
-	private static Point nodeToPrint;
-	char[][] characters;
 	
-	//TODO: все координаты родителей равны 0 в closedList
 	public void readFromFile() {
 		try (Stream<String> inputStream = Files.lines(Path.of(Solution.class.getResource("/input.txt").toURI()))) {
 			inputStream.forEach(line -> {
@@ -28,9 +25,7 @@ class Solution {
 				grid.add(currentLine);
 			});
 			
-			
-//			printGrid();
-			characters = new char[grid.size()][grid.get(0).size()];
+
 			findMinPath();
 		}
 		
@@ -51,24 +46,10 @@ class Solution {
 
 			// If cell is goal cell
 			if (cell.y == grid.size() - 1 && cell.x == grid.get(0).size() - 1) {
-					System.out.println("The path has been found!");
-					for (int i = 0; i < grid.size(); ++i) {
-						for (int j = 0; j < grid.get(0).size(); ++j) {
-							characters[i][j] = '.';
-						}
-					}
-					
-					nodeToPrint = cell;
-					traceBack();
-					
-					for (int i = 0; i < grid.size(); ++i) {
-						for (int j = 0; j < grid.get(0).size(); ++j) {
-							System.out.print(characters[i][j]);
-						}
-						System.out.println();
-					}
-					System.out.println(sum);
-					return ;
+				System.out.println("The path has been found!");
+				
+				traceBack(cell);
+				return ;
 			}
 			
 			List<Point> neighbours = getNeighboursOf(cell);
@@ -102,18 +83,17 @@ class Solution {
 	}
 	
 	
-	private void traceBack() {
+	private void traceBack(Point nodeToPrint) {
 		if (nodeToPrint.y == 0 && nodeToPrint.x == 0) {
-			return ; 
+			System.out.println("Sum: " + sum);
+			System.exit(0);
 		}
-		characters[nodeToPrint.y][nodeToPrint.x] = '#';
+		
 		sum += nodeToPrint.riskLevel;
 		
 		for (Point nodePoint : closedList) {
 			if (nodePoint.y == nodeToPrint.parentY && nodePoint.x == nodeToPrint.parentX) {
-				nodeToPrint = nodePoint;
-
-				traceBack();
+				traceBack(nodePoint);
 			}
 		}
 	}
